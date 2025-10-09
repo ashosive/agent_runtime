@@ -44,7 +44,7 @@ pub fn create_session(request: CreateSessionRequest) -> (Arc<Session>, SessionRe
 
     let session = Arc::new(Session {
         id: Uuid::new_v4(),
-        state: SessionState::Pending,
+        state: SessionState::Active,
         limits,
         created_at: now,
         updated_at: now,

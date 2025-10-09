@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }   # to serialize/deserialize structs
 serde_json = "1"                                   # to debug-print sessions as JSON
 uuid = { version = "1", features =  ["v4", "serde"] }        # to generate session IDs

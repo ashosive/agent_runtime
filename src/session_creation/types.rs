@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum SessionState {
-    Active,
+    Pending,
     Ended,
 }
 
