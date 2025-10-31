@@ -1,9 +1,6 @@
 use uuid::Uuid;
 use chrono::Utc;
 use serde::{Serialize, Deserialize};
-use std::sync::Arc;
-use once_cell::sync::Lazy;
-use dashmap::DashMap;
 
 use crate::session_creation::types::{
     Session,
@@ -25,10 +22,10 @@ pub struct CreateSessionRequest {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SessionReceipt {
     pub session_id: Uuid,
-    pub created_at: chrono::DateTime<Utc>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
-pub fn create_session(request: CreateSessionRequest) -> (Arc<Session>, SessionReceipt) {
+pub fn create_session(request: CreateSessionRequest) -> (Session, SessionReceipt) {
     let limits = SessionLimits {
         max_tokens: request.max_tokens.unwrap_or(2048),
         max_duration_ms: request.max_duration_ms.unwrap_or(60_000),
@@ -42,42 +39,24 @@ pub fn create_session(request: CreateSessionRequest) -> (Arc<Session>, SessionRe
 
     let now = Utc::now();
 
-    let session = Arc::new(Session {
+    let session = Session {
         id: Uuid::new_v4(),
         state: SessionState::Pending,
         limits,
         created_at: now,
         updated_at: now,
+        started_at: None,
         context_seed,
         accounting: SessionAccounting {
             prompt_tokens: 0,
             output_tokens: 0,
             requests: 0,
         },
-    });
-
+    };
     let receipt = SessionReceipt {
         session_id: session.id,
         created_at: now,
     };
 
     (session, receipt)
-}
-
-static SESSION_RAM: Lazy<DashMap<Uuid, Arc<Session>>> = Lazy::new(DashMap::new);
-
-pub fn save_session_to_ram(session: &Arc<Session>) {
-    SESSION_RAM.insert(session.id, Arc::clone(session));
-}
-
-pub fn get_session_from_ram(id: &Uuid) -> Option<Arc<Session>> {
-    SESSION_RAM.get(id).map(|e| Arc::clone(e.value()))
-}
-
-pub fn remove_session_from_ram(id: &Uuid) -> Option<Arc<Session>> {
-    SESSION_RAM.remove(id).map(|(_, v)| v)
-}
-
-pub fn list_session_ids() -> Vec<Uuid> {
-    SESSION_RAM.iter().map(|e| *e.key()).collect()
 }
