@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum SessionState {
     Pending,
     Active,
@@ -11,7 +11,7 @@ pub enum SessionState {
     Ended,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SessionLimits {
     pub max_tokens: u32,
     pub max_duration_ms: u64,
@@ -41,4 +41,5 @@ pub struct Session {
     pub started_at: Option<DateTime<Utc>>,
     pub context_seed: SessionContextSeed,
     pub accounting: SessionAccounting,
+    pub model: Option<String>,
 }

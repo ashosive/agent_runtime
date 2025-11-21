@@ -11,6 +11,17 @@ pub struct ModelTag {
     pub modified_at: Option<String>,
     pub size: Option<u64>,
     pub digest: Option<String>,
+    pub details: Option<ModelDetails>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ModelDetails {
+    pub parent_model: Option<String>,
+    pub format: Option<String>,
+    pub family: Option<String>,
+    pub families: Option<Vec<String>>,
+    pub parameter_size: Option<String>,
+    pub quantization_level: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

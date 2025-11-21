@@ -1,85 +1,42 @@
 use agent_runtime::session_creation::session_create::CreateSessionRequest;
 use agent_runtime::session_manager::SessionManager;
-use serde_json;
-use std::io::{self, Write};
-use std::time::Duration;
+use agent_runtime::session_inference::infer_once_with_input;
+use tokio::time::{sleep, Duration};
 
 #[tokio::main]
 async fn main() {
-    println!("runtime booting…");
+    println!("--- Rust Agent Runtime demo starting ---");
 
-    let (_s1, r1) = SessionManager::create_session(CreateSessionRequest {
-        system_prompt: Some("You are an AI assistant.".into()),
-        user_prompt_snapshot: Some("Hello".into()),
-        max_tokens: Some(2048),
+    let (_handle, receipt) = SessionManager::create_session(CreateSessionRequest {
+        system_prompt: Some("You are an AI assistant running inside a Rust agent runtime.".into()),
+        user_prompt_snapshot: None,
+        max_tokens: Some(512),
         max_duration_ms: Some(60_000),
         max_context_bytes: Some(256 * 1024),
     });
-    let (_s2, _r2) = SessionManager::create_session(CreateSessionRequest {
-        system_prompt: Some("System B".into()),
-        user_prompt_snapshot: None,
-        max_tokens: None,
-        max_duration_ms: None,
-        max_context_bytes: None,
-    });
 
-    println!("Created: {}", serde_json::to_string_pretty(&r1).unwrap());
+    println!("Created session: {}", receipt.session_id);
 
-    let ticker = tokio::spawn(async {
-        loop {
-            println!("Session listed = {:?}", SessionManager::list_session_ids());
-            tokio::time::sleep(Duration::from_secs(20)).await;
+    SessionManager::set_session_model(&receipt.session_id, "llama3.2-vision:latest")
+        .expect("failed to set model");
+    println!("Model set for session");
+
+    let _ = SessionManager::start_session(&receipt.session_id)
+        .expect("failed to start session");
+    println!("Session started");
+
+    let user_input = "Explain what is ai agent ?";
+    println!("Calling infer_once_with_input...");
+
+    match infer_once_with_input(&receipt.session_id, user_input).await {
+        Ok(resp) => {
+            println!("LLM RESPONSE:\n{resp}");
         }
-    });
-
-    loop {
-        println!("\n=== Session Menu ===");
-        let ids = SessionManager::list_session_ids();
-        if ids.is_empty() {
-            println!("No sessions left. Exiting.");
-            break;
-        }
-        for (i, id) in ids.iter().enumerate() {
-            println!("[{}] {}", i, id);
-        }
-        println!("Type: index to START, 'q' to quit");
-
-        print!("> ");
-        io::stdout().flush().unwrap();
-
-        let mut line = String::new();
-        io::stdin().read_line(&mut line).unwrap();
-        let input = line.trim();
-
-        if input.eq_ignore_ascii_case("q") {
-            println!("Bye!");
-            break;
-        }
-
-        match input.parse::<usize>() {
-            Ok(idx) if idx < ids.len() => {
-                let id = ids[idx];
-                match SessionManager::start_session(&id) {
-                    Ok(receipt) => {
-                        println!("Started:\n{}", serde_json::to_string_pretty(&receipt).unwrap());
-                        if let Some(handle) = SessionManager::get_session(&id) {
-                            let guard = handle.read().unwrap();
-                            println!("Now:\n{}", serde_json::to_string_pretty(&*guard).unwrap());
-                        }
-                    }
-                    Err(e) => println!("Start error: {:?}", e),
-                }
-            }
-            _ => println!("Invalid input."),
+        Err(e) => {
+            println!("infer_once_with_input error: {e:?}");
         }
     }
 
-    tokio::select! {
-        _ = tokio::signal::ctrl_c() => {
-            println!("Ctrl+C received, shutting down…");
-        }
-        _ = async {} => {}
-    }
-
-    ticker.abort();
+    sleep(Duration::from_secs(3)).await;
+    println!("--- done ---");
 }

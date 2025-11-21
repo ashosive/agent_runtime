@@ -52,7 +52,9 @@ pub fn create_session(request: CreateSessionRequest) -> (Session, SessionReceipt
             output_tokens: 0,
             requests: 0,
         },
+        model: None,
     };
+
     let receipt = SessionReceipt {
         session_id: session.id,
         created_at: now,
