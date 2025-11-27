@@ -118,7 +118,7 @@ pub async fn run_session_inference(session_id: Uuid) {
     }
 
     const INACTIVITY_TIMEOUT_SECS: i64 = 120;
-    const INACTIVITY_POLL_INTERVAL_SECS: u64 = 10;
+    const INACTIVITY_POLL_INTERVAL_SECS: u64 = 100;
 
     loop {
         sleep(Duration::from_secs(INACTIVITY_POLL_INTERVAL_SECS)).await;

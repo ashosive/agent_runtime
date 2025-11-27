@@ -25,7 +25,7 @@ async fn main() {
         .expect("failed to start session");
     println!("Session started");
 
-    let user_input = "Explain what is ai agent ?";
+    let user_input = "what is ai agent?";
     println!("Calling infer_once_with_input...");
 
     match infer_once_with_input(&receipt.session_id, user_input).await {
